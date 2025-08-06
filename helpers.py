@@ -98,12 +98,13 @@ def exportChannels(API, HLS):
     asset = API.getAsset().json()
 
     if HLS:
-        for counter, channel in enumerate(asset):
-            try:
+        for (counter, channel) in enumerate(asset):
+            urls = channel.get('url')
+            if not urls:
+                channelNotFound.append(channel['name'])
+            else:
                 channelList.append([channel['name'], channel['url']['hlsAac']])
                 log(INFO, const.CHANNEL_FOUND.format(channel['name'], channel['url']['hlsAac']))
-            except:
-                channelNotFound.append(channel['name'])
     else:
         for counter, channel in enumerate(asset):
             counter += 1

@@ -25,12 +25,13 @@ class PROXY():
         logger = logging.getLogger('werkzeug')
         logger.setLevel(logging.DEBUG)
 
-        self.app.route("/<id>")(self.channel)
+        self.app.route("/<id>.m3u8")(self.channel)
         self.app.run(host=host, port=port, threaded=threaded)
 
 
     def req(self, url):
         r = requests.get(url=url)
+
 
         if(r.status_code == 404):
             for i in range(200):
@@ -55,6 +56,9 @@ class PROXY():
         log(DEBUG, 'CHANNEL: {}'.format(self.channels[int(id)][0]))
 
         my_str = self.channels[int(id)][1]
+
+
+
         idx = my_str.index('playlist.m3u8')
         my_str = my_str[:idx] + 'high/' + my_str[idx:]
 
@@ -70,6 +74,7 @@ class PROXY():
             url = '{}?token={}&hash={}'.format(my_str, self.token, self.user)
             r = self.req(url)
 
+        r.raise_for_status()
         infile = r.content.decode()
         file = infile.splitlines()
 
@@ -91,4 +96,4 @@ class PROXY():
 
         out = "\n".join(file)
 
-        return Response(out, mimetype='text/plain', headers={'Content-disposition': 'attachment; filename=playlist.m3u8'})
+        return Response(out, mimetype='application/vnd.apple.mpegurl', headers={'Content-disposition': 'attachment; filename=playlist.m3u8'})
