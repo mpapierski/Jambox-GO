@@ -51,7 +51,7 @@ def main():
         channel = ET.SubElement(tv, "channel", id=name)
         ET.SubElement(channel, "display-name").text = f"{name}"
         ET.SubElement(
-            channel, "icon", src=f"http://192.168.1.24:1234/tvg-logo/{channel_id}"
+            channel, "icon", src=f"http://{CONFIG["host"]}:{CONFIG["port"]}/tvg-logo/{channel_id}"
         )
 
     now = datetime.now(local_tz)
@@ -60,13 +60,11 @@ def main():
         position = now
         boundary = None
         while boundary is None or position < boundary:
-            print(f"Fetching EPG starting from: {position}")
+            print(f"Fetching EPG starting from: {position} for channels: {channels_chunk}")
             response = jambox.getEpg(position, channels_chunk)
             start = datetime.fromtimestamp(response["start"], local_tz)
             end = datetime.fromtimestamp(response["end"], local_tz)
             boundary = datetime.fromtimestamp(response["boundary"], local_tz)
-            print(f"Start: {start}, End: {end}, Boundary: {boundary}")
-
             for sgtid, chunk in response["chunk"].items():
                 sgtid = int(sgtid)
                 for item in chunk:
@@ -76,11 +74,6 @@ def main():
                         print(json.dumps(item, indent=4))
                         raise
                     end_dt = datetime.fromtimestamp(int(item["end"]), local_tz)
-                    print(
-                        f'SGID: {sgtid}, CHANNEL: {mapping[sgtid]}, Start: {start}, End: {end}, Title: {item["name"]}'
-                    )
-                    print(f'Description: {item["description"]}')
-                    print()
 
                     description = html_to_plaintext(item["description"])
 
