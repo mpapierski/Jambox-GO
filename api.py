@@ -26,7 +26,7 @@ class API:
             self.login()
 
         with open(helpers.files[2], 'r') as openfile:
-            jr = json.loads(json.load(openfile))
+            jr = json.load(openfile)
             self.ID = jr.get('id')
             self.SEED = jr.get('seed')
             self.IMPERSONATE = jr.get('devices')[0].get('id')
@@ -81,9 +81,10 @@ class API:
         response = requests.post(url, headers=headers, json=self.CREDENTIALS)
         helpers.log(helpers.DEBUG, 'Login status: {}'.format(response.status_code))
 
-        
+
         with open(helpers.files[2], "w") as outfile:
-            outfile.write(json.dumps(response.text, indent=4))
+            json_data = response.json()
+            json.dump(json_data, outfile, indent=4)
 
 
     def getToken(self):

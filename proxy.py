@@ -7,11 +7,13 @@ import datetime
 import os
 import time
 import logging
+from urllib.parse import urlparse
 
 from helpers import log, DEBUG
+import re
 
 class PROXY():
-    
+
     def __init__(self, jambox, channels, host, port, threaded, cookie, debug):
         self.jambox = jambox
         self.token = ''
@@ -21,7 +23,7 @@ class PROXY():
 
         self.app = Flask('Jambox Go decoder')
         logger = logging.getLogger('werkzeug')
-        logger.setLevel(logging.ERROR)
+        logger.setLevel(logging.DEBUG)
 
         self.app.route("/<id>")(self.channel)
         self.app.run(host=host, port=port, threaded=threaded)
@@ -29,6 +31,7 @@ class PROXY():
 
     def req(self, url):
         r = requests.get(url=url)
+
         if(r.status_code == 404):
             for i in range(200):
                 time.sleep(0.005)
@@ -54,35 +57,38 @@ class PROXY():
         my_str = self.channels[int(id)][1]
         idx = my_str.index('playlist.m3u8')
         my_str = my_str[:idx] + 'high/' + my_str[idx:]
-        
-        log(DEBUG, 'Reqest url: {}'.format(my_str))
+
+        o = urlparse(my_str)
+
+        log(DEBUG, 'Request url: {}'.format(my_str))
 
         url = '{}?token={}&hash={}'.format(my_str, self.token, self.user)
-        
+
         r = self.req(url)
 
-        if(r.status_code != 200):
+        if r.status_code != 200:
             url = '{}?token={}&hash={}'.format(my_str, self.token, self.user)
             r = self.req(url)
-        
-        file = r.content.decode().split('\n')
-        key = file[2].split('URI="')[1]
-        channel_url = file[6].split('/hls_scr_aac')[0]
 
-        file[2] = '#EXT-X-KEY:METHOD=AES-128,URI="'+channel_url+key
+        infile = r.content.decode()
+        file = infile.splitlines()
 
-        index1 = file[6].find('playlist')
-        index2 = file[6].find('.', index1)
+        ext_x_key = file[2]
+        assert ext_x_key.startswith('#EXT-X-KEY:METHOD=AES-128,URI="')
 
-        chunk = int(file[6][index1+8:index2])
-        log(DEBUG, 'Playing chunks: {}, {}, {}'.format(chunk-1, chunk, chunk+1))
+        # Extract URI and IV from ext_x_key
+        match = re.search(r'URI="([^"]+)",IV=(0x[0-9a-fA-F]+)', ext_x_key)
+        if match:
+            uri = match.group(1)
+            iv = match.group(2)
+            log(DEBUG, f'Extracted URI: {uri}')
+            log(DEBUG, f'Extracted IV: {iv}')
+        else:
+            log(DEBUG, 'Failed to extract URI and IV')
+            assert False
 
-        file[6].replace('playlist{}'.format(chunk), 'playlist{}'.format(chunk-1))
-        file[8].replace('playlist{}'.format(chunk+1), 'playlist{}'.format(chunk))
-        file[10].replace('playlist{}'.format(chunk+2), 'playlist{}'.format(chunk+1))
+        file[2] = f'#EXT-X-KEY:METHOD=AES-128,URI="{o.scheme}://{o.netloc}{uri}",IV="{iv}"'
 
-        out = ""
-        for line in file:
-            out = out + line + "\n"
+        out = "\n".join(file)
 
         return Response(out, mimetype='text/plain', headers={'Content-disposition': 'attachment; filename=playlist.m3u8'})

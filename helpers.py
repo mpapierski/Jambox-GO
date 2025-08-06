@@ -1,4 +1,4 @@
-import win32console as con
+# import win32console as con
 import signal
 import os
 import socket
@@ -23,7 +23,8 @@ debug = True
 def handler(signum, frame):
     global oldMode
     global cmd
-    cmd.SetConsoleMode(oldMode)
+    print('?? Interrupted')
+    # cmd.SetConsoleMode(oldMode)
     exit()
 
 
@@ -32,12 +33,12 @@ def disableWinConSole():
     global cmd
     if os.name == 'nt':
         ENABLE_EXTENDED_FLAGS = 0x0080
-        ENABLE_QUICK_EDIT_MODE = 0x0040 
+        ENABLE_QUICK_EDIT_MODE = 0x0040
 
-        cmd = con.GetStdHandle(con.STD_INPUT_HANDLE)
+        # cmd = con.GetStdHandle(con.STD_INPUT_HANDLE)
         oldMode = cmd.GetConsoleMode()
         signal.signal(signal.SIGINT, handler)
-        cmd.SetConsoleMode((oldMode | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE)
+        # cmd.SetConsoleMode((oldMode | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE)
 
 
 def getIP():
@@ -56,8 +57,8 @@ def log(LEVEL, msg):
         print(now.strftime("%Y-%m-%d %H:%M:%S"), "|   ", msg)
 
 
-CONFIG = "{{\"quality\": \"high\", \"debug\":0, \"host\":\"{}\", \"port\":6666, \"threaded\":1, \"hls\":1}}".format(getIP())
-CREDENTIALS = "{\"username\":\">>EMAIL<<\",\"password\":\">>HASLO<<\"}"
+CONFIG = {"quality": "high", "debug":0, "host":getIP(),"port":6666,"threaded":1,"hls":1}
+CREDENTIALS = {"username":">>EMAIL<<","password":">>HASLO<<"}
 
 files = ['config.json', 'credentials.json', 'cookie.json']
 channelsFile = 'channels.list'
@@ -67,7 +68,7 @@ playlistFile = 'tv.m3u'
 def checkFiles():
     ok = True
     for index, file in enumerate(files):
-        if(not path.exists(file)):
+        if not path.exists(file):
             ok = False
             f = open(file, "w")
             if index == 0:
