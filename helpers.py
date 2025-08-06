@@ -70,24 +70,22 @@ def checkFiles():
     for index, file in enumerate(files):
         if not path.exists(file):
             ok = False
-            f = open(file, "w")
-            if index == 0:
-                f.write(json.dumps(CONFIG, indent=4))
-                log(ERROR, const.CONFIG_FILES_ERR)
-            elif index == 1:
-                f.write(CREDENTIALS)
-                log(ERROR, const.CONFIG_FILES_ERR)
-            else:
-                f.write('')
-            f.close()
+            with open(file, "w") as f:
+                if index == 0:
+                    f.write(json.dumps(CONFIG, indent=4))
+                    log(ERROR, const.CONFIG_FILES_ERR)
+                elif index == 1:
+                    f.write(json.dumps(CREDENTIALS, indent=4))
+                    log(ERROR, const.CONFIG_FILES_ERR)
+                else:
+                    pass
         else:
-            f = open(file, "r")
-            if index == 1:
-                content = f.read()
-                if content.find('>>HASLO<<') != -1 or content.find('>>EMAIL<<') != -1:
-                    ok = False
-                    log(ERROR, const.CREDENTIALS_FILE_NOT_SET)
-            f.close()
+            with open(file, "r") as f:
+                if index == 1:
+                    content = json.load(f)
+                    if content['password'] == '>>HASLO<<' or content['username'] == '>>EMAIL<<':
+                        ok = False
+                        log(ERROR, const.CREDENTIALS_FILE_NOT_SET)
     return ok
 
 
