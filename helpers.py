@@ -96,6 +96,7 @@ def exportChannels(API, HLS):
     asset = API.getAsset().json()
 
     if HLS:
+        has_ids = {}
         for (counter, channel) in enumerate(asset):
             urls = channel.get('url')
             if not urls:
@@ -103,12 +104,14 @@ def exportChannels(API, HLS):
             else:
                 name = channel['name']
                 url = urls['hlsAac']
-                channelList.append({
-                    'name': name,
-                    'url': url,
-                    'sgtid': channel['sgtid']
-                })
-                log(INFO, const.CHANNEL_FOUND.format(name, url))
+                if channel['sgtid'] not in has_ids:
+                    channelList.append({
+                        'name': name,
+                        'url': url,
+                        'sgtid': channel['sgtid']
+                    })
+                    log(INFO, const.CHANNEL_FOUND.format(name, url))
+                    has_ids.add(channel['sgtid'])
     else:
         for counter, channel in enumerate(asset):
             counter += 1
