@@ -96,7 +96,7 @@ def exportChannels(API, HLS):
     asset = API.getAsset().json()
 
     if HLS:
-        has_ids = {}
+        has_ids = set()
         for (counter, channel) in enumerate(asset):
             urls = channel.get('url')
             if not urls:
