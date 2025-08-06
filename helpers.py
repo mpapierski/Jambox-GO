@@ -62,7 +62,7 @@ CREDENTIALS = {"username":">>EMAIL<<","password":">>HASLO<<"}
 
 files = ['config.json', 'credentials.json', 'cookie.json']
 channelsFile = 'channels.list'
-playlistFile = 'tv.m3u'
+playlistFile = 'playlist.m3u'
 
 
 def checkFiles():

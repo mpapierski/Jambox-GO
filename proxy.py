@@ -9,7 +9,7 @@ import time
 import logging
 from urllib.parse import urlparse
 
-from helpers import log, DEBUG
+from helpers import log, DEBUG, playlistFile
 import re
 
 class PROXY():
@@ -25,6 +25,7 @@ class PROXY():
         logger = logging.getLogger('werkzeug')
         logger.setLevel(logging.DEBUG)
 
+        self.app.route('/playlist.m3u')(self.playlist)
         self.app.route('/epg')(self.epg)
         self.app.route('/tvg-logo/<id>')(self.tvgLogo)
         self.app.route("/<id>.m3u8")(self.channel)
@@ -110,3 +111,6 @@ class PROXY():
 
     def epg(self):
         return send_file('epg.xml', mimetype='application/xml')
+
+    def playlist(self):
+        return send_file(playlistFile, mimetype='application/vnd.apple.mpegurl')
