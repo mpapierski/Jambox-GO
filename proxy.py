@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, send_file
 import requests
 import json
 import urllib.parse
@@ -25,6 +25,8 @@ class PROXY():
         logger = logging.getLogger('werkzeug')
         logger.setLevel(logging.DEBUG)
 
+        self.app.route('/epg')(self.epg)
+        self.app.route('/tvg-logo/<id>')(self.tvgLogo)
         self.app.route("/<id>.m3u8")(self.channel)
         self.app.run(host=host, port=port, threaded=threaded)
 
@@ -53,11 +55,11 @@ class PROXY():
 
 
     def channel(self, id):
-        log(DEBUG, 'CHANNEL: {}'.format(self.channels[int(id)][0]))
+        channel = self.channels[int(id)]
 
-        my_str = self.channels[int(id)][1]
+        log(DEBUG, 'CHANNEL: {}'.format(channel['name']))
 
-
+        my_str = channel['url']
 
         idx = my_str.index('playlist.m3u8')
         my_str = my_str[:idx] + 'high/' + my_str[idx:]
@@ -97,3 +99,14 @@ class PROXY():
         out = "\n".join(file)
 
         return Response(out, mimetype='application/vnd.apple.mpegurl', headers={'Content-disposition': 'attachment; filename=playlist.m3u8'})
+
+    def tvgLogo(self, id):
+        log(DEBUG, 'TVG-LOGO: {}'.format(id))
+        channel = self.channels[int(id)]
+        url = f'https://static.sgtsa.pl/channels/logos/{channel["sgtid"]}.png'
+        r = self.req(url)
+        r.raise_for_status()
+        return Response(r.content, mimetype='image/png', headers={'Content-disposition': 'attachment; filename=logo.png'})
+
+    def epg(self):
+        return send_file('epg.xml', mimetype='application/xml')

@@ -10,6 +10,7 @@ import base64
 import os
 from os import path
 import helpers
+import backoff
 
 
 class API:
@@ -138,3 +139,14 @@ class API:
         response = requests.get(url, headers=headers)
 
         return response
+
+    @backoff.on_exception(backoff.expo, requests.exceptions.HTTPError)
+    def getEpg(self, start, channels):
+        start_ts = int(start.timestamp())
+        ENDPOINT = f'v1/epg/chunk/{start_ts}/assets/{",".join(map(str, channels))}'
+        url = self.API_URL + ENDPOINT
+
+        headers = self.getAuthHeaders(self.auth(ENDPOINT))
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()

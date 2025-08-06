@@ -17,8 +17,8 @@ if helpers.checkFiles():
     try:
         with open(helpers.files[2], 'rb') as openfile:
             COOKIES = json.load(openfile)
-    except:
-            COOKIES = ''
+    except FileNotFoundError:
+            COOKIES = {}
 
     jambox = API(CREDENTIALS, COOKIES)
 

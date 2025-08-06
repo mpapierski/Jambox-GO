@@ -103,8 +103,14 @@ def exportChannels(API, HLS):
             if not urls:
                 channelNotFound.append(channel['name'])
             else:
-                channelList.append([channel['name'], channel['url']['hlsAac']])
-                log(INFO, const.CHANNEL_FOUND.format(channel['name'], channel['url']['hlsAac']))
+                name = channel['name']
+                url = urls['hlsAac']
+                channelList.append({
+                    'name': name,
+                    'url': url,
+                    'sgtid': channel['sgtid']
+                })
+                log(INFO, const.CHANNEL_FOUND.format(name, url))
     else:
         for counter, channel in enumerate(asset):
             counter += 1
@@ -138,9 +144,9 @@ def exportList(IP, PORT):
     with open(channelsFile, 'r') as data_file:
         channels = json.load(data_file)
 
-    for index, channel in enumerate(channels):
-        m3u.append('#EXTINF:-1,{}\n'.format(channel[0]))
-        m3u.append('http://{}:{}/{}\n'.format(IP, PORT, index))
+    for (index, channel) in enumerate(channels):
+        m3u.append(f'#EXTINF:-1 tvg-id="{channel["name"]}" tvg-logo="http://{IP}:{PORT}/tvg-logo/{index}",{channel["name"]}\n')
+        m3u.append(f'http://{IP}:{PORT}/{index}.m3u8\n')
 
     with open(path.join(playlistFile), "w") as outfile:
         outfile.writelines(m3u)

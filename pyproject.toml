@@ -5,6 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "backoff>=2.2.1",
+    "bs4>=0.0.2",
     "flask>=3.1.1",
     "requests>=2.32.4",
+    "tqdm>=4.67.1",
+    "tzlocal>=5.3.1",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "flake8>=7.3.0",
 ]
