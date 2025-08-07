@@ -7,7 +7,7 @@ import datetime
 import time
 import json
 import ast
-
+import sys
 
 import const
 import api
@@ -206,9 +206,15 @@ def translate_tvg_id(name):
     """
 
     try:
+        name_without_hd = name
+        if name_without_hd.endswith(" HD"):
+            name_without_hd = name_without_hd[:-3].strip()
+
         mappings = build_channel_mapping()
         # Quick lookup in the cached mapping
-        if mapping := mappings.get(name.strip(), name):
+        if mapping := mappings.get(name.strip()):
+            return mapping
+        elif mapping := mappings.get(name_without_hd):
             return mapping
         else:
             return name
