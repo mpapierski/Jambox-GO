@@ -127,7 +127,6 @@ def checkChannels():
     return False
 
 
-@functools.lru_cache(maxsize=128)
 def build_channel_mapping():
     """
     Build a mapping dictionary from display names to channel IDs.
@@ -192,7 +191,7 @@ def build_channel_mapping():
         return {}
 
 
-def translate_tvg_id(name):
+def translate_tvg_id(mappings, name):
     """
     Translates a channel name to its corresponding tvg-id by looking up
     the pl.xml file for matching display-name values.
@@ -205,23 +204,33 @@ def translate_tvg_id(name):
         str: The channel id from pl.xml, or the original name if not found
     """
 
-    try:
-        name_without_hd = name
-        if name_without_hd.endswith(" HD"):
-            name_without_hd = name_without_hd[:-3].strip()
+    manual_mappings = {
+        "Comedy Central Extra Polsat HD": "Polsat Comedy Central Extra",
+        "Viasat Nature Polsat HD": "Polsat Viasat Nature",
+        "Viasat History Polsat HD": "Polsat Viasat History",
+        "ID Investigation Discovery HD": "ID",
+        "CANAL+ Domo HD": "CANAL+ Domo",
+        "CANAL+ Kuchnia HD": "Canal+ Kuchnia",
+        "DaVinci HD": "Da Vinci Learning",
+        "Stars.TV HD": "Stars TV",
+        "SHOW TV HD": "Red Carpet TV",
+        "FREEDOM": "UA TV HD",
+        "teleTOON+ HD": "Teletoon",
+    }
 
-        mappings = build_channel_mapping()
-        # Quick lookup in the cached mapping
-        if mapping := mappings.get(name.strip()):
-            return mapping
-        elif mapping := mappings.get(name_without_hd):
-            return mapping
-        else:
-            return name
+    name_without_hd = name
+    if name_without_hd.endswith(" HD"):
+        name_without_hd = name_without_hd[:-3].strip()
 
-    except Exception as e:
-        log(ERROR, f"Error in translate_tvg_id: {e}")
-        return name
+    # Quick lookup in the cached mapping
+    if mapping := mappings.get(name.strip()):
+        return mapping
+    elif mapping := mappings.get(name_without_hd):
+        return mapping
+    elif mapping := manual_mappings.get(name.strip()):
+        return mapping
+    else:
+        return None
 
 
 def exportList(IP, PORT):
@@ -230,12 +239,19 @@ def exportList(IP, PORT):
     with open(channelsFile, "r") as data_file:
         channels = json.load(data_file)
 
+    mappings = build_channel_mapping()
+
     for index, channel in enumerate(channels):
         channel_name = channel["name"]
-        tvg_id = translate_tvg_id(channel_name)
-        print(f"{channel_name} -> {tvg_id}")
+        tvg_id = translate_tvg_id(mappings, channel["name"])
+        if tvg_id is None:
+            print(
+                f"Channel '{channel_name}' not found in pl.xml mappings. Please check your EPG file.",
+                file=sys.stderr,
+            )
+
         m3u.append(
-            f'#EXTINF:-1 tvg-id="{tvg_id}" tvg-logo="http://{IP}:{PORT}/tvg-logo/{index}",{channel_name}\n'
+            f'#EXTINF:-1 tvg-id="{tvg_id}" tvg-logo="http://{IP}:{PORT}/tvg-logo/{index}",{tvg_id}\n'
         )
         m3u.append(f"http://{IP}:{PORT}/{index}.m3u8\n")
 
